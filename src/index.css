@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+* {
+  font-family: "Bitter", serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+.custom-dots .slick-dots {
+    color: white;
+  }
+  
+  .custom-dots .slick-dots li {
+    margin: 0 25px; /* Adjust spacing between dots */
+    color: red;
+  }
+
+  .custom-dots .slick-dots li button::before{
+    font-size: 10px;
+  }
+  
+  .custom-dots .slick-dots li.slick-active button:before {
+    --tw-bg-opacity: 1;
+    color: rgb(163 230 40 / var(--tw-bg-opacity));
+  }
+
+  .custom-dots .slick-dots li.slick-active:hover button:before,
+.custom-dots .slick-dots li:hover button:before {
+  color: white !important; /* Ensure color stays white on hover if not active */
+}
