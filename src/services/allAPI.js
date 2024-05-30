@@ -5,7 +5,12 @@ import { SERVER_URL } from "./serverURL"
 export const signUpAPI =async (reqBody)=>{
     return await commonAPI("POST",`${SERVER_URL}/signup`,reqBody,"")
 }
+
 // login
 export const loginAPI=async(reqBody)=>{
     return await commonAPI("POST",`${SERVER_URL}/login`,reqBody,"")
+}
+// googleLogin
+export const googleLoginAPI=async(reqBody)=>{
+    return await commonAPI("POST",`${SERVER_URL}/googleLogin`,reqBody,"")
 }

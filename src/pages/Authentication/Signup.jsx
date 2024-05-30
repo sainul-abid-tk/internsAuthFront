@@ -1,18 +1,20 @@
 import { Button, IconButton } from '@mui/material'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import authImg from '../../assets/Images/authImg.png'
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import apple from '../../assets/Images/icons8-apple-50.png'
 import facebook from '../../assets/Images/icons8-facebook-48.png'
 import google from '../../assets/Images/icons8-google-48.png'
 import { useNavigate } from 'react-router-dom';
-import { signUpAPI } from '../../services/allAPI';
+import { googleLoginAPI, signUpAPI } from '../../services/allAPI';
 import { toast } from 'react-toastify';
+import { useGoogleLogin } from '@react-oauth/google';
+import {  userRoleResponseContext } from '../../ContextAPI/TokenAuth';
 
 function Signup() {
+  const {userRoleResponse,setUserRoleResponse}=useContext(userRoleResponseContext)
     const navigate=useNavigate()
     const [showPassword, setShowPassword] = useState(false);
-
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   }
@@ -53,6 +55,45 @@ function Signup() {
     }
   }
 
+  const googleLogin = 
+  useGoogleLogin({
+    onSuccess: tokenResponse =>{ 
+      const accessToken=tokenResponse?.access_token
+      fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+})
+.then(response => response.json())
+.then(async data => {
+  // Extract email and username from the response
+  console.log(data);
+  const userData={
+    email:data.email,
+    username:data.name,
+    profilePic:data.picture    
+  }
+  
+    const result=await googleLoginAPI(userData)
+    console.log(result);
+    if(result.data){
+      const existingUser=result.data.existingUser?result.data.existingUser:result.data.newUser
+      sessionStorage.setItem('userDetails',JSON.stringify(existingUser))
+      sessionStorage.setItem('token',JSON.stringify(result.data.token))
+      setTimeout(() => {
+        setUserRoleResponse(existingUser?.role)
+        navigate('/landing')
+      }, 1500);
+    }else{
+      toast.warn(result.response.data)
+    }
+})
+.catch(error => {
+  console.error('Error fetching user info:', error);
+})
+    }
+  });
+  
   return (
     <>
     {/* Header */}
@@ -99,7 +140,7 @@ function Signup() {
         <div className='flex space-x-6 justify-center'>
           <img src={facebook} width={30} height={30} alt="" />
           <img src={apple} width={30} height={30} alt="" />
-          <img src={google} width={30} height={30} alt="" />
+          <img onClick={googleLogin} className='cursor-pointer' src={google} width={30} height={30} alt="" />
         </div>
        </div>
     </div>

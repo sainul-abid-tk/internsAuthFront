@@ -6,12 +6,13 @@ import apple from '../../assets/Images/icons8-apple-50.png'
 import facebook from '../../assets/Images/icons8-facebook-48.png'
 import google from '../../assets/Images/icons8-google-48.png'
 import { useNavigate } from 'react-router-dom';
-import { loginAPI } from '../../services/allAPI';
+import { googleLoginAPI, loginAPI } from '../../services/allAPI';
 import {decrypt} from 'n-krypta'
 import {toast} from 'react-toastify'
-import { tokenAuthenticationContext } from '../../ContextAPI/TokenAuth';
+import {userRoleResponseContext } from '../../ContextAPI/TokenAuth';
+import { useGoogleLogin} from '@react-oauth/google';
 function Login() {
-  const {isAuthorized,setIsAuthorized}=useContext(tokenAuthenticationContext)
+  const {userRoleResponse,setUserRoleResponse}=useContext(userRoleResponseContext)
     const navigate=useNavigate()
     const [showPassword, setShowPassword] = useState(false);
 
@@ -22,8 +23,26 @@ function Login() {
   };
   const [userDetails,setUserDetails]=useState({
     email:'',
-    password:''
+    password:'',
+    username:'',
+    profilePic:''
   })
+  // navigation Details
+  const navigationDetails=(existingUser)=>{
+    const role=existingUser?.role
+    if(role==='admin'){
+    setTimeout(() => {
+      setUserRoleResponse(role)
+      navigate('/adhome')
+    }, 1500);
+    }else{
+    setTimeout(() => {
+      setUserRoleResponse(role)
+      navigate('/landing')
+    }, 1500);
+    }
+  }
+  // normal login
   const handleLogin=async(e)=>{
     e.preventDefault()
     const {email,password}=userDetails
@@ -31,23 +50,60 @@ function Login() {
       toast.warning("please fill the form!!!")
     }else{
       const result=await loginAPI(userDetails)
-      if(result.status===200){
+      if(result.data){
         toast.success('login successfull!!')
         const existingUser=result.data.existingUser
         const encryptedPassword=result?.data.existingUser.password
         existingUser.password=decrypt(`${encryptedPassword}`,'Aabi1234')
         sessionStorage.setItem('userDetails',JSON.stringify(result.data.existingUser))
         sessionStorage.setItem('token',JSON.stringify(result.data.token))
-        setIsAuthorized(true)
-        setTimeout(() => {
-          navigate('/landing')
-        }, 2000);
+        navigationDetails(existingUser)
       }else{
         toast.error("Invalid Entry!!");
       }
     }
   }
+  // google login
+  const googleLogin = 
+  useGoogleLogin({
+    onSuccess: tokenResponse =>{ 
+      const accessToken=tokenResponse?.access_token
+      fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+})
+.then(response => response.json())
+.then(async data => {
+  // Extract email and username from the response
+  console.log(data);
+  const userData={
+    email:data.email,
+    username:data.name,
+    profilePic:data.picture    
+  }
   
+    const result=await googleLoginAPI(userData)
+    console.log(result);
+    if(result.data){
+      const existingUser=result.data.existingUser
+      sessionStorage.setItem('userDetails',JSON.stringify(existingUser))
+      sessionStorage.setItem('token',JSON.stringify(result.data.token))
+      navigationDetails(existingUser)
+    }else{
+      toast.warn(result.response.data)
+    }
+})
+.catch(error => {
+  console.error('Error fetching user info:', error);
+})
+    }
+  });
+
+  useEffect(()=>{
+    sessionStorage.removeItem('userDetails')
+    sessionStorage.removeItem('token')
+  },[])
   return (
     <>
     {/* Header */}
@@ -91,14 +147,14 @@ function Login() {
          <Button type='submit'  variant='contained' style={{backgroundColor:'rgb(30 70 175 ))'}} className='bg-blue-800 h-12'>Login</Button>
         </form>
         <p className='text-center text-gray-500'>Or continue with</p>
-        <div className='flex space-x-6 justify-center'>
+        <div  className='flex   justify-center space-x-5 w-full'>
           <img src={facebook} width={30} height={30} alt="" />
           <img src={apple} width={30} height={30} alt="" />
-          <img src={google} width={30} height={30} alt="" />
+          <img onClick={googleLogin} className='cursor-pointer' src={google} width={30} height={30} alt="" />
+          </div>
         </div>
        </div>
     </div>    
-     </div>
      </>
   )
 }

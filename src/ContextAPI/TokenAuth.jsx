@@ -1,21 +1,17 @@
 import React, { createContext, useEffect, useState } from 'react'
-export const tokenAuthenticationContext=createContext()
+export const userRoleResponseContext=createContext()
 function TokenAuth({children}) {
-    const [isAuthorized,setIsAuthorized]=useState(false)
+    const [userRoleResponse,setUserRoleResponse]=useState("")
     useEffect(()=>{
         if(sessionStorage.getItem("token")){
-            setIsAuthorized(true)
+            setUserRoleResponse(JSON.parse(sessionStorage.getItem('userDetails')).role)
         }
-        else
-        {
-            setIsAuthorized(false)
-        }
-    },[isAuthorized])
+    },[userRoleResponse])
   return (
     <>
-    <tokenAuthenticationContext.Provider value={{isAuthorized,setIsAuthorized}}>
+    <userRoleResponseContext.Provider value={{userRoleResponse,setUserRoleResponse}}>
     {children}
-    </tokenAuthenticationContext.Provider>
+    </userRoleResponseContext.Provider>
     </>
   )
 }
